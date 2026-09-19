@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit",
+    "prebuild": "node ../../deploy/hosting-prebuild.mjs",
+    "postbuild": "node ../../deploy/hosting-postbuild.mjs"
   },
   "dependencies": {
     "@chikbo/shared": "*",

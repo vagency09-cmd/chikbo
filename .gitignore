@@ -3,6 +3,8 @@ dist/
 build/
 .env
 .env.*
+!apps/web/.env.production
+!apps/admin/.env.production
 !.env.example
 *.log
 .DS_Store
