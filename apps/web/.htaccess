@@ -1,0 +1,9 @@
+# Some hosts (Hostinger's Git deploy) publish this whole folder rather than
+# just dist/. Serve the built site from dist/ transparently, so / shows the
+# store, /admin the console, and source files are never exposed.
+# When the host publishes dist/ directly, this file is simply not deployed.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{REQUEST_URI} !^/dist/
+  RewriteRule ^(.*)$ /dist/$1 [L]
+</IfModule>
