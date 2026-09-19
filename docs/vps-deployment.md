@@ -92,10 +92,13 @@ not run it automatically, so a deploy can never alter the database by surprise.
 If the storefront and admin are uploaded to ordinary web hosting instead:
 
 - The API is served at `https://api.chikbo.com` (Nginx site `api.chikbo.com` on the VPS).
-- Build the upload package on your computer: `bash deploy/build-frontend-for-hosting.sh`
-  → `chikbo-frontend.zip`. Extract it inside the hosting account's `public_html`
-  (storefront at `/`, admin at `/admin`, `.htaccess` files included).
+- Deploy from GitHub. Hosting that only copies files (Hostinger → Git): import
+  the **`frontend-build`** branch into `public_html`. It holds the built site
+  (storefront at `/`, admin at `/admin`, `.htaccess` included) and is refreshed
+  with `bash deploy/publish-frontend-branch.sh`.
+  Hosting that can build: branch `main`, build command `npm run build:hosting`,
+  output directory `hosting-upload`.
 - Point `chikbo.com` and `www` at the web hosting; keep `api` pointing at the VPS.
 - Webhooks must use the API host: `https://api.chikbo.com/api/v1/webhooks/razorpay`
   and `https://api.chikbo.com/api/v1/webhooks/courier`.
-- Re-run the script and re-upload after every frontend change.
+- After a frontend change: run `bash deploy/publish-frontend-branch.sh`, then pull/redeploy in the hosting panel.

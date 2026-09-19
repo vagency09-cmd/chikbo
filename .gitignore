@@ -18,4 +18,3 @@ apps/api/secrets/
 
 # Frontend package for web hosting (built by deploy/build-frontend-for-hosting.sh)
 hosting-upload/
-chikbo-frontend.zip

@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 # Builds the storefront and admin for ordinary web hosting (Hostinger, cPanel…)
-# and zips them, ready to upload into public_html. The API stays on the VPS.
+# into hosting-upload/ — the exact contents of public_html. The API stays on
+# the VPS at api.chikbo.com.
 #
-#   bash deploy/build-frontend-for-hosting.sh
-#   → chikbo-frontend.zip   (upload + extract inside public_html)
+#   bash deploy/build-frontend-for-hosting.sh      (or: npm run build:hosting)
+#
+# Hosting that can build from GitHub: build command `npm run build:hosting`,
+# output directory `hosting-upload`. Hosting that only copies files: use
+# deploy/publish-frontend-branch.sh and import the `frontend-build` branch.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -15,7 +19,7 @@ VITE_API_URL="$API_ORIGIN/api/v1" VITE_SITE_URL="$SITE_URL" npm run build --work
 VITE_API_URL="$API_ORIGIN" VITE_WEB_URL="$SITE_URL" npm run build --workspace apps/admin
 
 OUT=hosting-upload
-rm -rf "$OUT" chikbo-frontend.zip
+rm -rf "$OUT"
 mkdir -p "$OUT/admin"
 cp -R apps/web/dist/. "$OUT/"
 cp -R apps/admin/dist/admin/. "$OUT/admin/"
@@ -53,5 +57,4 @@ cat > "$OUT/admin/.htaccess" <<'HT'
 </IfModule>
 HT
 
-(cd "$OUT" && zip -qr ../chikbo-frontend.zip . )
-echo "Ready: chikbo-frontend.zip ($(du -h chikbo-frontend.zip | cut -f1)) — upload and extract inside public_html"
+echo "Ready: $OUT/ (storefront at /, admin at /admin)"
