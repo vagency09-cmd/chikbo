@@ -26,7 +26,7 @@ by PM2 handles the API and renders storefront pages. Files live in `deploy/`.
 
 ```bash
 # on the server
-curl -fsSL https://raw.githubusercontent.com/adbhargav/chikbo/main/deploy/setup-server.sh -o setup-server.sh
+curl -fsSL https://raw.githubusercontent.com/vagency09-cmd/chikbo/main/deploy/setup-server.sh -o setup-server.sh
 bash setup-server.sh
 ```
 

@@ -3,7 +3,7 @@
 #   bash setup-server.sh
 set -euo pipefail
 
-REPO_URL="${REPO_URL:-https://github.com/adbhargav/chikbo.git}"
+REPO_URL="${REPO_URL:-https://github.com/vagency09-cmd/chikbo.git}"
 APP_DIR=/var/www/chikbo
 
 echo "==> System packages"
