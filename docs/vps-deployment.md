@@ -86,3 +86,16 @@ sudo certbot renew --dry-run
 The database has no migration history; schema changes are applied with
 `npx prisma db push` from `apps/api` (additive changes only). `deploy.sh` does
 not run it automatically, so a deploy can never alter the database by surprise.
+
+## Alternative: frontend on web hosting, API on the VPS
+
+If the storefront and admin are uploaded to ordinary web hosting instead:
+
+- The API is served at `https://api.chikbo.com` (Nginx site `api.chikbo.com` on the VPS).
+- Build the upload package on your computer: `bash deploy/build-frontend-for-hosting.sh`
+  → `chikbo-frontend.zip`. Extract it inside the hosting account's `public_html`
+  (storefront at `/`, admin at `/admin`, `.htaccess` files included).
+- Point `chikbo.com` and `www` at the web hosting; keep `api` pointing at the VPS.
+- Webhooks must use the API host: `https://api.chikbo.com/api/v1/webhooks/razorpay`
+  and `https://api.chikbo.com/api/v1/webhooks/courier`.
+- Re-run the script and re-upload after every frontend change.

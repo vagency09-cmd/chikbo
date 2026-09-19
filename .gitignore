@@ -15,3 +15,7 @@ apps/api/prisma/dev.db
 secrets/
 apps/api/secrets/
 *firebase-adminsdk*.json
+
+# Frontend package for web hosting (built by deploy/build-frontend-for-hosting.sh)
+hosting-upload/
+chikbo-frontend.zip
