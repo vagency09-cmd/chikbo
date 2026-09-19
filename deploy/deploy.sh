@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pull the latest code, build everything, and restart. Run on the server:
+# Pull the latest code, build the API, and restart. Run on the server:
 #   bash /var/www/chikbo/deploy/deploy.sh
 set -euo pipefail
 
@@ -17,16 +17,10 @@ git pull --ff-only
 echo "==> Dependencies"
 npm ci
 
-echo "==> Build"
-# Same-origin hosting: the storefront and admin call /api on their own domain,
-# so VITE_API_URL stays unset. These two only shape links and previews.
-export VITE_SITE_URL=https://chikbo.com
-export VITE_WEB_URL=https://chikbo.com
+echo "==> Build (backend only — the frontend is deployed on web hosting)"
 npm run build --workspace packages/shared
 npm run prisma:generate --workspace apps/api
 npm run build --workspace apps/api
-npm run build --workspace apps/web
-npm run build --workspace apps/admin
 
 echo "==> Restart"
 if pm2 describe chikbo >/dev/null 2>&1; then
