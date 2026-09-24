@@ -20,7 +20,7 @@ import sharp, { type OutputInfo } from 'sharp';
 import { prisma } from './prisma';
 import { logger } from './logger';
 import { ApiError } from '../middleware/error';
-import { getObject, putObject, r2Configured, r2PublicBase, uploadKey } from './objectStorage';
+import { getObject, objectExists, putObject, r2Configured, r2PublicBase, uploadKey } from './objectStorage';
 
 /** Images committed to the repo (seeded catalogue, early uploads). Read-only at runtime. */
 export const UPLOADS_DIR = path.resolve(process.cwd(), 'uploads');
@@ -136,6 +136,16 @@ export async function serveUpload(req: Request, res: Response, next: NextFunctio
   const cacheHeader = 'public, max-age=31536000, immutable';
 
   try {
+    // With a public bucket domain, send the browser to Cloudflare's CDN
+    // instead of streaming R2 → this server → browser. Older rows still hold
+    // `/uploads/…` links, so this covers them too. Files that were never
+    // copied to R2 (repo-committed, Postgres) fall through to the code below.
+    if (r2Configured && r2PublicBase && (await objectExists(uploadKey(rel)))) {
+      res.setHeader('Cache-Control', cacheHeader);
+      res.redirect(301, `${r2PublicBase}/${uploadKey(rel)}`);
+      return;
+    }
+
     if (r2Configured) {
       const range = typeof req.headers.range === 'string' ? req.headers.range : undefined;
       let object;
