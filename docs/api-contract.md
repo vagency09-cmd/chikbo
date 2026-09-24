@@ -73,7 +73,7 @@ Shipping: free at/above ₹999 after discount, else ₹79 (constants in shared).
 1. `POST /checkout` → `CheckoutCreateResponse` `{orderId, orderNumber, razorpayOrderId, razorpayKeyId, amountInPaise, currency, prefill}`. Keep the same idempotencyKey when retrying — the same pending order is returned.
    - Signed in: `{addressId, couponCode?, idempotencyKey: <uuid>}` (a saved address), or an inline `address` instead of `addressId`.
    - Guest (`X-Guest-Token`): `{email, address: {fullName, phone, line1, line2?, city, state, pincode}, couponCode?, idempotencyKey}`. The confirmation email goes to `email`; the order carries no user until it is claimed.
-   Errors: 422 `INSUFFICIENT_STOCK`, `PAYMENTS_UNAVAILABLE`, coupon codes above.
+   Errors: 422 `INSUFFICIENT_STOCK`, `PAYMENTS_UNAVAILABLE`, `NOT_SERVICEABLE` (no courier delivers to the address pincode), coupon codes above.
 2. Open Razorpay Checkout with `key: razorpayKeyId, order_id: razorpayOrderId, amount, currency`.
 3. On success: `POST /payments/verify` with `{razorpay_order_id, razorpay_payment_id, razorpay_signature}` → `{orderId, orderNumber, status}`.
 4. On failure/dismiss: `POST /payments/failed` `{razorpay_order_id, error_code?, error_description?}`.

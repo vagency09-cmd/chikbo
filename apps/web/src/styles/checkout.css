@@ -211,6 +211,39 @@
   color: var(--ink-500);
 }
 
+/* ---- Delivery check under the address (auto, no button) ---- */
+.delivery-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 4px 0 16px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink-500);
+}
+.delivery-check svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--gold-500);
+}
+.delivery-check--ok {
+  color: var(--success);
+  font-weight: 600;
+}
+.delivery-check--ok svg {
+  color: var(--success);
+}
+.delivery-check--error {
+  color: var(--error);
+  font-weight: 500;
+}
+.delivery-check--error svg {
+  color: var(--error);
+}
+.address-form + .delivery-check {
+  margin-top: 12px;
+}
+
 /* ---- Order success: account prompt for guests ---- */
 
 .success-account {

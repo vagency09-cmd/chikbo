@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatPaise } from '@chikbo/shared';
@@ -10,7 +10,8 @@ import { useToast } from '../lib/toast';
 import { usePageMeta } from '../lib/usePageMeta';
 import { loadRazorpay } from '../lib/razorpay';
 import { Magnetic, Reveal } from '../lib/motion';
-import { EMAIL_RE } from '../lib/format';
+import { EMAIL_RE, PINCODE_RE } from '../lib/format';
+import { rememberPincode, rememberedPincode, useServiceability } from '../lib/serviceability';
 import {
   AddressFields,
   AddressForm,
@@ -20,6 +21,7 @@ import {
   type AddressErrors,
   type AddressFormValues,
 } from '../components/AddressForm';
+import { DeliveryCheck } from '../components/DeliveryCheck';
 import { EmptyState, ErrorState } from '../components/ui';
 import { CheckIcon } from '../components/icons';
 import '../styles/checkout.css';
@@ -43,7 +45,10 @@ export default function Checkout() {
 
   // Guest checkout: contact email + a one-off delivery address, nothing saved.
   const [guestEmail, setGuestEmail] = useState('');
-  const [guestAddress, setGuestAddress] = useState<AddressFormValues>(emptyAddress);
+  const [guestAddress, setGuestAddress] = useState<AddressFormValues>(() => ({
+    ...emptyAddress(),
+    pincode: rememberedPincode(),
+  }));
   const [guestErrors, setGuestErrors] = useState<AddressErrors & { email?: string }>({});
   const guestEmailValid = EMAIL_RE.test(guestEmail.trim());
 
@@ -65,7 +70,20 @@ export default function Checkout() {
   }, [selectedId, addresses.data]);
 
   const busy = phase === 'creating' || phase === 'paying';
-  const canPlace = isGuest ? true : !!effectiveSelectedId;
+
+  // The pincode we will ship to: typed by a guest, or from the chosen saved
+  // address. Checked as soon as it is 6 digits — no button to press.
+  const shipPincode = isGuest
+    ? guestAddress.pincode.trim()
+    : ((addresses.data ?? []).find((a) => a.id === effectiveSelectedId)?.pincode ?? '');
+  const shipPincodeValid = PINCODE_RE.test(shipPincode);
+  const delivery = useServiceability(shipPincodeValid ? shipPincode : null);
+  const notServiceable = shipPincodeValid && delivery.data?.serviceable === false;
+  useEffect(() => {
+    if (shipPincodeValid) rememberPincode(shipPincode);
+  }, [shipPincode, shipPincodeValid]);
+
+  const canPlace = (isGuest ? true : !!effectiveSelectedId) && !notServiceable;
 
   /** Validates the guest form and returns the request body, or null when something is missing. */
   const guestRequest = (): Partial<CheckoutCreateRequest> | null => {
@@ -101,7 +119,9 @@ export default function Checkout() {
     } catch (err) {
       setPhase('idle');
       if (err instanceof ApiError) {
-        if (err.code === 'INSUFFICIENT_STOCK') {
+        if (err.code === 'NOT_SERVICEABLE') {
+          setError(err.message);
+        } else if (err.code === 'INSUFFICIENT_STOCK') {
           setError('Some items in your cart are no longer in stock. Please review your cart.');
         } else if (err.code === 'PAYMENTS_UNAVAILABLE') {
           setError('Payments are temporarily unavailable. Please try again in a few minutes.');
@@ -268,6 +288,7 @@ export default function Checkout() {
                   onChange={setGuestAddress}
                   idPrefix="guest-addr"
                 />
+                <DeliveryCheck pincode={guestAddress.pincode} />
               </div>
             )}
 
@@ -317,6 +338,10 @@ export default function Checkout() {
               ))}
             </div>
 
+            {addressList.length > 0 && (
+              <DeliveryCheck pincode={shipPincode} prompt="Select an address to see the delivery estimate." />
+            )}
+
             {formMode === 'closed' ? (
               <button type="button" className="btn btn-secondary btn-sm" onClick={() => setFormMode('new')}>
                 + Add new address
@@ -348,6 +373,12 @@ export default function Checkout() {
             <p className="muted" style={{ marginBottom: 16 }}>
               Pay securely via Razorpay — UPI, cards, netbanking and wallets.
             </p>
+
+            {notServiceable && !error && (
+              <p className="alert alert-error" role="alert">
+                We can't deliver to {shipPincode} yet. Please use a different address or pincode.
+              </p>
+            )}
 
             {error && (
               <p className="alert alert-error" role="alert">
@@ -412,7 +443,7 @@ export default function Checkout() {
               </div>
             )}
             <div>
-              <dt>Shipping</dt>
+              <dt>Shipping{shipPincodeValid ? ` to ${shipPincode}` : ''}</dt>
               <dd>{cart.shippingInPaise === 0 ? 'Free' : formatPaise(cart.shippingInPaise)}</dd>
             </div>
             <div className="totals-grand">

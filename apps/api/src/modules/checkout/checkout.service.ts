@@ -10,6 +10,7 @@ import { computeTotals, effectiveUnitPrice, type CouponRule } from '../../utils/
 import { generateOrderNumber } from '../../utils/orderNumber';
 import { getValidCoupon, ownerWhere, type CouponIdentity } from '../cart/cart.service';
 import { thumbnailFor } from '../catalog/catalog.service';
+import { checkPincodeServiceability } from '../catalog/serviceability.service';
 
 /** Who is checking out: an account holder, or a guest identified by cart token + email. */
 export type CheckoutActor =
@@ -61,6 +62,11 @@ export async function createCheckout(actor: CheckoutActor, input: CheckoutCreate
   }
 
   const address = await resolveAddress(actor, input);
+
+  // The storefront already shows this while the address is being typed; this
+  // is the backstop so an unserviceable pincode can never become an order.
+  const delivery = await checkPincodeServiceability(address.pincode);
+  if (!delivery.serviceable) throw ApiError.unprocessable('NOT_SERVICEABLE', delivery.message, { pincode: address.pincode });
 
   const order = await prisma.$transaction(
     async (tx) => {
