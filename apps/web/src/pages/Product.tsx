@@ -31,7 +31,7 @@ import { PincodeChecker } from '../components/PincodeChecker';
 import { AccordionItem } from '../components/Accordion';
 import { RatingStars } from '../components/RatingStars';
 import { Breadcrumbs, ErrorState, JsonLd, Pagination, QtyStepper } from '../components/ui';
-import { CheckIcon, HeartIcon, LockIcon, ShareIcon, ShieldIcon, TruckIcon } from '../components/icons';
+import { CheckIcon, ChevronDownIcon, HeartIcon, LockIcon, ShareIcon, ShieldIcon, TruckIcon } from '../components/icons';
 import '../styles/product.css';
 
 function uniq(values: (string | null)[]): string[] {
@@ -253,12 +253,16 @@ export default function Product() {
   const ok = useMotionOK();
 
   const [imageIndex, setImageIndex] = useState(0);
+  /** +1 when moving to a later photo, -1 for earlier — sets the slide direction. */
+  const [slideDir, setSlideDir] = useState(1);
   const [size, setSize] = useState<string | null>(null);
   const [color, setColor] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
   const [justAdded, setJustAdded] = useState(false);
   const [burstKey, setBurstKey] = useState(0);
   const addedTimer = useRef<number | null>(null);
+  /** Where a swipe on the main photo began, until the pointer lifts. */
+  const swipeStart = useRef<{ x: number; y: number; id: number } | null>(null);
 
   // Parallax-tilt on the gallery (≤3°, mouse only).
   const rxRaw = useMotionValue(0);
@@ -476,6 +480,26 @@ export default function Product() {
     ryRaw.set(0);
   };
 
+  // Next/previous photo: arrows, swipe on the main image, or ←/→ keys.
+  const stepImage = (delta: number) => {
+    if (images.length < 2) return;
+    setSlideDir(delta);
+    setImageIndex((i) => (i + delta + images.length) % images.length);
+  };
+  const onSwipeStart = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    swipeStart.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+  };
+  const onSwipeEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    if (!start || start.id !== e.pointerId) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    // A deliberate horizontal swipe, not a tap or a vertical page scroll.
+    if (Math.abs(dx) >= 40 && Math.abs(dx) > Math.abs(dy) * 1.5) stepImage(dx < 0 ? 1 : -1);
+  };
+
   return (
     <div className="container page product-page">
       <JsonLd
@@ -513,8 +537,14 @@ export default function Product() {
                   className={`gallery-thumb${i === imageIndex ? ' gallery-thumb--active' : ''}`}
                   aria-label={`View image ${i + 1} of ${images.length}`}
                   aria-pressed={i === imageIndex}
-                  onClick={() => setImageIndex(i)}
-                  onMouseEnter={() => setImageIndex(i)}
+                  onClick={() => {
+                    setSlideDir(i > imageIndex ? 1 : -1);
+                    setImageIndex(i);
+                  }}
+                  onMouseEnter={() => {
+                    setSlideDir(i > imageIndex ? 1 : -1);
+                    setImageIndex(i);
+                  }}
                 >
                   <ProductImage
                     src={img.url}
@@ -537,16 +567,33 @@ export default function Product() {
             className="gallery-main"
             onPointerMove={onTilt}
             onPointerLeave={resetTilt}
+            onPointerDown={onSwipeStart}
+            onPointerUp={onSwipeEnd}
+            onPointerCancel={() => (swipeStart.current = null)}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight') stepImage(1);
+              else if (e.key === 'ArrowLeft') stepImage(-1);
+            }}
+            tabIndex={images.length > 1 ? 0 : undefined}
+            role={images.length > 1 ? 'group' : undefined}
+            aria-roledescription={images.length > 1 ? 'carousel' : undefined}
+            aria-label={images.length > 1 ? `Product photos, ${imageIndex + 1} of ${images.length}. Swipe or use the arrow keys.` : undefined}
             style={ok ? { rotateX: rx, rotateY: ry, transformPerspective: 900 } : undefined}
           >
-            <AnimatePresence initial={false}>
+            <AnimatePresence initial={false} custom={slideDir}>
               <motion.div
                 key={imageIndex}
                 className="gallery-slide"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
+                custom={slideDir}
+                variants={{
+                  enter: (dir: number) => ({ x: ok ? `${dir * 60}%` : 0, opacity: 0 }),
+                  center: { x: 0, opacity: 1 },
+                  exit: (dir: number) => ({ x: ok ? `${dir * -60}%` : 0, opacity: 0 }),
+                }}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.38, ease: EASE }}
               >
                 <ProductImage
                   src={mainImage?.url ?? null}
@@ -566,6 +613,29 @@ export default function Product() {
               </motion.div>
             </AnimatePresence>
             {badge && <span className="gallery-badge">{badge}</span>}
+            {images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  className="gallery-arrow gallery-arrow--prev"
+                  aria-label="Previous photo"
+                  onClick={() => stepImage(-1)}
+                >
+                  <ChevronDownIcon size={16} />
+                </button>
+                <button
+                  type="button"
+                  className="gallery-arrow gallery-arrow--next"
+                  aria-label="Next photo"
+                  onClick={() => stepImage(1)}
+                >
+                  <ChevronDownIcon size={16} />
+                </button>
+                <span className="gallery-count" aria-hidden="true">
+                  {imageIndex + 1} / {images.length}
+                </span>
+              </>
+            )}
           </motion.div>
         </div>
 
