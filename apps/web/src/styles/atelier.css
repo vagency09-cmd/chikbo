@@ -224,12 +224,6 @@ html.lenis body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0;
-  transition: opacity 600ms ease;
-}
-
-.silk-media-img--loaded {
-  opacity: 1;
 }
 
 /* ---- Paisley motifs ---- */

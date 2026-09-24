@@ -20,9 +20,9 @@ interface Props {
   width?: number;
   height?: number;
   /**
-   * Render the SilkArt woven placeholder underneath and crossfade the real
-   * image in once it loads. Used for product cards, tiles and galleries.
-   * When false (cart/order thumbnails), keeps the simple monogram fallback.
+   * Use the SilkArt woven art when there is no photograph (or it fails to
+   * load). Used for product cards, tiles and galleries. When false
+   * (cart/order thumbnails), keeps the simple monogram fallback.
    */
   art?: boolean;
   /** Category slug — picks the silk hue pair. */
@@ -39,9 +39,9 @@ interface Props {
 }
 
 /**
- * Product/category image that never shows a broken-image glyph. In `art`
- * mode the SilkArt system renders instantly and the real photograph
- * crossfades over it (0.6s) when it loads.
+ * Product/category image that never shows a broken-image glyph. The
+ * photograph is shown as soon as the browser has it; in `art` mode a missing
+ * one is replaced by SilkArt instead of the plain monogram.
  */
 export function ProductImage({
   src,
@@ -60,12 +60,8 @@ export function ProductImage({
 }: Props) {
   const resolved = assetUrl(src);
   const [failed, setFailed] = useState(false);
-  const [loaded, setLoaded] = useState(false);
 
-  useEffect(() => {
-    setFailed(false);
-    setLoaded(false);
-  }, [resolved]);
+  useEffect(() => setFailed(false), [resolved]);
 
   /** Always meaningful, always falling back to the product name. */
   const label = alt?.trim() || name;
@@ -82,10 +78,12 @@ export function ProductImage({
         aria-label={!decorative && !hasImage ? label : undefined}
         aria-hidden={decorative ? true : undefined}
       >
-        <SilkArt seed={seed ?? name} category={category} label={name} showLabel={showLabel} className="silk-media-art" />
+        {!hasImage && (
+          <SilkArt seed={seed ?? name} category={category} label={name} showLabel={showLabel} className="silk-media-art" />
+        )}
         {hasImage && (
           <img
-            className={`silk-media-img${loaded ? ' silk-media-img--loaded' : ''}`}
+            className="silk-media-img"
             src={resolved}
             /* Real alt text even inside a decorative wrapper: `aria-hidden`
                keeps it out of the a11y tree (the link text already names the
@@ -95,7 +93,6 @@ export function ProductImage({
             {...fetchPriorityAttr(fetchPriority)}
             width={width}
             height={height}
-            onLoad={() => setLoaded(true)}
             onError={() => setFailed(true)}
           />
         )}

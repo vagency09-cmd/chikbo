@@ -7,8 +7,8 @@ import { SilkArt } from './SilkArt';
  *
  * Unlike ProductImage — which resolves API-hosted upload paths through
  * assetUrl() — these are bundled site assets served from the web origin, so the
- * src is used as-is. SilkArt renders underneath and the photograph crossfades
- * over it, so a section is never blank while the image loads (or if it 404s).
+ * src is used as-is. The photograph is shown as soon as the browser has it;
+ * SilkArt stands in only if it 404s, so a section is never blank.
  */
 interface Props {
   src: string;
@@ -35,7 +35,6 @@ export function EditorialImage({
   fetchPriority,
   objectPosition,
 }: Props) {
-  const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
 
   return (
@@ -46,16 +45,15 @@ export function EditorialImage({
       role={failed && alt ? 'img' : undefined}
       aria-label={failed && alt ? alt : undefined}
     >
-      <SilkArt seed={seed} category={category} showLabel={false} className="silk-media-art" />
+      {failed && <SilkArt seed={seed} category={category} showLabel={false} className="silk-media-art" />}
       {!failed && (
         <img
-          className={`silk-media-img${loaded ? ' silk-media-img--loaded' : ''}`}
+          className="silk-media-img"
           src={src}
           alt={alt}
           loading={loading}
           {...fetchPriorityAttr(fetchPriority)}
           style={objectPosition ? { objectPosition } : undefined}
-          onLoad={() => setLoaded(true)}
           onError={() => setFailed(true)}
         />
       )}

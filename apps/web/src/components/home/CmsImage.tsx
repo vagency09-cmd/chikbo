@@ -27,9 +27,9 @@ interface Props {
 }
 
 /**
- * CMS banner/tile imagery. SilkArt renders instantly underneath and the
- * uploaded photograph crossfades over it once it loads, so a merchandising
- * slot is never blank — and never a broken-image glyph if the file is missing.
+ * CMS banner/tile imagery. The uploaded photograph is shown as soon as the
+ * browser has it; SilkArt stands in only when a slot has no image or the file
+ * is missing, so it is never blank and never a broken-image glyph.
  */
 export function CmsImage({
   url,
@@ -45,14 +45,10 @@ export function CmsImage({
 }: Props) {
   const resolved = assetUrl(url);
   const resolvedMobile = assetUrl(mobileUrl);
-  const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
   const hasImage = !!resolved && !failed;
 
-  useEffect(() => {
-    setLoaded(false);
-    setFailed(false);
-  }, [resolved, resolvedMobile]);
+  useEffect(() => setFailed(false), [resolved, resolvedMobile]);
 
   return (
     <div
@@ -61,18 +57,17 @@ export function CmsImage({
       aria-label={!decorative && !hasImage ? alt || undefined : undefined}
       aria-hidden={decorative || !alt ? true : undefined}
     >
-      <SilkArt seed={seed} category={category} showLabel={false} className="silk-media-art" />
+      {!hasImage && <SilkArt seed={seed} category={category} showLabel={false} className="silk-media-art" />}
       {hasImage && (
         <picture>
           {resolvedMobile && <source media="(max-width: 767px)" srcSet={resolvedMobile} />}
           <img
-            className={`silk-media-img${loaded ? ' silk-media-img--loaded' : ''}`}
+            className="silk-media-img"
             src={resolved}
             alt={alt}
             loading={loading}
             {...fetchPriorityAttr(fetchPriority)}
             style={objectPosition ? { objectPosition } : undefined}
-            onLoad={() => setLoaded(true)}
             onError={() => setFailed(true)}
           />
         </picture>
