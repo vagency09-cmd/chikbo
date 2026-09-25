@@ -376,7 +376,8 @@
   overflow: hidden;
 }
 
-.mega-art {
+/* Scoped to the tile so it beats .silk-media's position: relative. */
+.mega-tile .mega-art {
   position: absolute;
   inset: 0;
   transition: transform 700ms var(--ease);
