@@ -386,6 +386,15 @@
   transform: scale(1.05);
 }
 
+/* Keeps the white "Shop all" label readable over a light photo. */
+.mega-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, transparent 45%, rgba(20, 14, 10, 0.62) 100%);
+  pointer-events: none;
+}
+
 .mega-shop {
   position: absolute;
   left: 16px;

@@ -4,7 +4,7 @@
  *
  * Two shapes, both fed straight from the category tree:
  *  - `category`: one category, its subcategories flowed into up to four
- *    columns, plus an editorial SilkArt tile with a "Shop all" link.
+ *    columns, plus a tile with the category's photo and a "Shop all" link.
  *  - `group`: the "More" overflow — every category that did not fit in the nav
  *    row, each as a column of its own with a heading and its subcategories.
  */
@@ -14,7 +14,7 @@ import { motion } from 'framer-motion';
 import type { CategoryDto } from '@chikbo/shared';
 import { EASE, useMotionOK } from '../../lib/motion';
 import { categoryPath, childrenOf, columnsFor } from '../../lib/nav';
-import { SilkArt } from '../SilkArt';
+import { ProductImage } from '../ProductImage';
 
 export type MegaTarget =
   | { kind: 'category'; category: CategoryDto }
@@ -125,7 +125,19 @@ function CategoryPanel({ category, onNavigate }: { category: CategoryDto; onNavi
       </div>
 
       <Link to={categoryPath(category)} className="mega-tile" onClick={onNavigate}>
-        <SilkArt seed={category.slug} category={category.slug} label={category.name} className="mega-art" />
+        {/* The category's own photo; the woven art only stands in when it has none. */}
+        <ProductImage
+          src={category.imageUrl}
+          alt={`${category.name} at Chikbo`}
+          name={category.name}
+          className="mega-art"
+          art
+          category={category.slug}
+          seed={category.slug}
+          showLabel={false}
+          decorative
+        />
+        <span className="mega-scrim" aria-hidden="true" />
         <span className="mega-shop">
           Shop all {category.name}
           <span className="mega-arrow" aria-hidden="true">
