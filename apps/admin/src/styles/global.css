@@ -1418,6 +1418,16 @@ textarea {
   color: var(--ink-900);
 }
 
+.media-slot-warn {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--warn-tint);
+  color: var(--brand-700);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
 .media-slot-spec {
   font-size: 10.5px;
   letter-spacing: 0.08em;

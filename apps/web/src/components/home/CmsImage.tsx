@@ -43,7 +43,9 @@ export function CmsImage({
   fetchPriority,
   objectPosition,
 }: Props) {
-  const resolved = assetUrl(url);
+  // Whichever image the admin uploaded is better than none: a slot with only
+  // a mobile crop shows that crop on every screen, and vice versa.
+  const resolved = assetUrl(url) ?? assetUrl(mobileUrl);
   const resolvedMobile = assetUrl(mobileUrl);
   const [failed, setFailed] = useState(false);
   const hasImage = !!resolved && !failed;
@@ -60,7 +62,9 @@ export function CmsImage({
       {!hasImage && <SilkArt seed={seed} category={category} showLabel={false} className="silk-media-art" />}
       {hasImage && (
         <picture>
-          {resolvedMobile && <source media="(max-width: 767px)" srcSet={resolvedMobile} />}
+          {resolvedMobile && resolvedMobile !== resolved && (
+            <source media="(max-width: 767px)" srcSet={resolvedMobile} />
+          )}
           <img
             className="silk-media-img"
             src={resolved}

@@ -382,6 +382,17 @@ export function ContentSection() {
                             <Thumb url={row.mobileImageUrl} name={row.title || 'Item'} large />
                           )}
                         </div>
+                        {!row.imageUrl.trim() && row.mobileImageUrl.trim() && (
+                          <p className="media-slot-warn" role="status">
+                            No {media.desktop.name.toLowerCase()} yet — the store shows the mobile crop on every
+                            screen until you add one.
+                          </p>
+                        )}
+                        {!row.imageUrl.trim() && !row.mobileImageUrl.trim() && (
+                          <p className="media-slot-warn" role="status">
+                            No image yet — the store shows a placeholder pattern for this item.
+                          </p>
+                        )}
                       </div>
 
                       <div className="cms-item-fields">
