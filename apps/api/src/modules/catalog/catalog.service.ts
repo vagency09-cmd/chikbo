@@ -156,6 +156,8 @@ export async function listProducts(q: ProductListQuery): Promise<Paginated<Produ
     variants: { some: variantFilter },
   };
 
+  if (q.sort === 'price_asc' || q.sort === 'price_desc') return listProductsByPrice(where, q);
+
   const orderBy: Prisma.ProductOrderByWithRelationInput[] =
     q.sort === 'rating' ? [{ ratingAvg: { sort: 'desc', nulls: 'last' } }, { ratingCount: 'desc' }] : [{ createdAt: 'desc' }];
 
@@ -170,14 +172,50 @@ export async function listProducts(q: ProductListQuery): Promise<Paginated<Produ
     }),
   ]);
 
-  let items = products.map(toListItem);
-  // Price sorts operate on the effective (post-discount) price, which lives
-  // across variants — sort the page in memory after the DB pass.
-  if (q.sort === 'price_asc' || q.sort === 'price_desc') {
-    const key = (i: ProductListItemDto) => i.minDiscountPriceInPaise ?? i.minPriceInPaise;
-    items = items.sort((a, b) => (q.sort === 'price_asc' ? key(a) - key(b) : key(b) - key(a)));
-  }
+  const items = products.map(toListItem);
+  return { items, page: q.page, pageSize: q.pageSize, total, totalPages: Math.ceil(total / q.pageSize) };
+}
 
+/**
+ * Price sorts rank on the effective (post-discount) price, which lives across
+ * variants and can't be expressed as a Prisma orderBy. Rank every matching
+ * product on a lightweight pass first, then load only the requested page —
+ * sorting a single DB page in memory would order each page on its own.
+ */
+async function listProductsByPrice(
+  where: Prisma.ProductWhereInput,
+  q: ProductListQuery,
+): Promise<Paginated<ProductListItemDto>> {
+  const candidates = await prisma.product.findMany({
+    where,
+    select: {
+      id: true,
+      createdAt: true,
+      variants: { where: { isActive: true }, select: { priceInPaise: true, discountPriceInPaise: true } },
+    },
+  });
+
+  // Same price the card shows: the cheapest active variant after discount.
+  const ranked = candidates
+    .map((p) => ({
+      id: p.id,
+      createdAt: p.createdAt.getTime(),
+      price: p.variants.length ? Math.min(...p.variants.map(effectiveUnitPrice)) : 0,
+    }))
+    .sort((a, b) => (q.sort === 'price_asc' ? a.price - b.price : b.price - a.price) || b.createdAt - a.createdAt);
+
+  const pageIds = ranked.slice((q.page - 1) * q.pageSize, q.page * q.pageSize).map((r) => r.id);
+  const products = await prisma.product.findMany({
+    where: { id: { in: pageIds } },
+    include: { images: { orderBy: { sortOrder: 'asc' } }, variants: true, category: true },
+  });
+  const byId = new Map(products.map((p) => [p.id, p]));
+  const items = pageIds.flatMap((id) => {
+    const p = byId.get(id);
+    return p ? [toListItem(p)] : [];
+  });
+
+  const total = ranked.length;
   return { items, page: q.page, pageSize: q.pageSize, total, totalPages: Math.ceil(total / q.pageSize) };
 }
 

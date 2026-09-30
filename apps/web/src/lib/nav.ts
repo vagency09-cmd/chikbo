@@ -40,6 +40,17 @@ export function columnsFor<T>(items: T[], target = COLUMN_TARGET, max = MAX_COLU
 /** Route for a category. */
 export const categoryPath = (category: CategoryDto): string => `/c/${category.slug}`;
 
+/**
+ * Route for a sibling category from a listing, carrying the shopper's sort
+ * choice along. Size/colour/price filters stay behind: they're per-category
+ * (a waist size of 28 means nothing on shirts), but "Price: low to high"
+ * should hold as they hop between categories.
+ */
+export function categoryHref(slug: string, current: URLSearchParams): string {
+  const sort = current.get('sort');
+  return sort ? `/c/${slug}?sort=${encodeURIComponent(sort)}` : `/c/${slug}`;
+}
+
 /** "New Arrivals" is the one non-category destination the spec asks for. */
 export const NEW_ARRIVALS = { label: 'New Arrivals', to: '/search?sort=newest' } as const;
 

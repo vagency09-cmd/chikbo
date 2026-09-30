@@ -5,6 +5,7 @@ import type { CategoryDto, ProductListItemDto } from '@chikbo/shared';
 import { useCategories, useFilterFacets, useProducts } from '../lib/queries';
 import { useStaggerVariants } from '../lib/motion';
 import { useScrollLock } from '../lib/nav-ui';
+import { categoryHref } from '../lib/nav';
 import { percentOff } from '../lib/format';
 import { swatchFor } from '../lib/colors';
 import { AccordionItem } from './Accordion';
@@ -226,7 +227,7 @@ export function ProductListing({ category, search, title, emptyTitle }: Props) {
         {categoryLinks.map((cat) => (
           <li key={cat.id}>
             <Link
-              to={`/c/${cat.slug}`}
+              to={categoryHref(cat.slug, searchParams)}
               className={`filter-link${cat.slug === category ? ' filter-link--active' : ''}`}
               aria-current={cat.slug === category ? 'page' : undefined}
               onClick={closeSheet}
@@ -421,7 +422,7 @@ export function ProductListing({ category, search, title, emptyTitle }: Props) {
             {categoryLinks.map((cat) => (
               <li key={cat.id}>
                 <Link
-                  to={`/c/${cat.slug}`}
+                  to={categoryHref(cat.slug, searchParams)}
                   className={`filter-link${cat.slug === category ? ' filter-link--active' : ''}`}
                   aria-current={cat.slug === category ? 'page' : undefined}
                 >

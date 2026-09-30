@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import type { CategoryDto } from '@chikbo/shared';
 import { useCategories } from '../lib/queries';
+import { categoryHref } from '../lib/nav';
 import { usePageMeta } from '../lib/usePageMeta';
 import { useRedirectIfMoved } from '../lib/redirects';
 import { absoluteUrl, canonicalFor, collectionPageSchema } from '../lib/seo';
@@ -26,6 +27,7 @@ function findCategory(categories: CategoryDto[], slug: string): Found | null {
 
 export default function Category() {
   const { slug = '' } = useParams();
+  const [searchParams] = useSearchParams();
   const { data: categories } = useCategories();
 
   const found = useMemo(
@@ -71,7 +73,7 @@ export default function Category() {
         {chips.length > 0 && parentForChips && (
           <nav className="subcat-chips" aria-label="Subcategories">
             <Link
-              to={`/c/${parentForChips.slug}`}
+              to={categoryHref(parentForChips.slug, searchParams)}
               className={`chip chip--brand${slug === parentForChips.slug ? ' chip--active' : ''}`}
               title={`All ${parentForChips.name} at Chikbo`}
             >
@@ -80,7 +82,7 @@ export default function Category() {
             {chips.map((child) => (
               <Link
                 key={child.id}
-                to={`/c/${child.slug}`}
+                to={categoryHref(child.slug, searchParams)}
                 className={`chip chip--brand${child.slug === slug ? ' chip--active' : ''}`}
                 title={`Shop ${child.name}`}
               >
